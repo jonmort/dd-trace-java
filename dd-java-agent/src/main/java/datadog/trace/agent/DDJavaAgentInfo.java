@@ -1,11 +1,11 @@
 package datadog.trace.agent;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import lombok.extern.slf4j.Slf4j;
+// import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+// @Slf4j
 public class DDJavaAgentInfo {
+  // TODO: move info into tooling
+  /*-
   public static final String VERSION;
 
   static {
@@ -31,4 +31,5 @@ public class DDJavaAgentInfo {
   public static void main(final String... args) {
     System.out.println(VERSION);
   }
+  */
 }
