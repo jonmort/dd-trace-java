@@ -16,10 +16,7 @@
  */
 package datadog.trace.agent;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.util.jar.JarFile;
@@ -73,6 +70,8 @@ public class TracingAgent {
         // TODO
         // - assert global tracer class is on bootstrap
         // - assert global tracer impl class is on agent classloader
+        final Method logVersionInfoMethod = tracerInstallerClass.getMethod("logVersionInfo");
+        logVersionInfoMethod.invoke(null);
       }
 
       AGENT_CLASSLOADER = agentClassLoader;
@@ -123,5 +122,40 @@ public class TracingAgent {
         outputStream.close();
       }
     }
+  }
+
+  public static void main(final String... args) {
+    try {
+      System.out.println(getAgentVersion());
+    } catch (Exception e) {
+      System.out.println("Failed to parse agent version");
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * Read version file out of the agent jar.
+   *
+   * @return Agent version
+   */
+  public static String getAgentVersion() throws Exception {
+    BufferedReader output = null;
+    InputStreamReader input = null;
+    final StringBuilder sb = new StringBuilder();
+    try {
+      input =
+          new InputStreamReader(
+              TracingAgent.class.getResourceAsStream("/dd-java-agent.version"), "UTF-8");
+      output = new BufferedReader(input);
+      for (int c = output.read(); c != -1; c = output.read()) sb.append((char) c);
+    } finally {
+      if (null != input) {
+        input.close();
+      }
+      if (null != output) {
+        output.close();
+      }
+    }
+    return sb.toString().trim();
   }
 }
