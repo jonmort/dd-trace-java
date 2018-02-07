@@ -57,26 +57,33 @@ public class TracingAgent {
       // FIXME: ensure all classes are available on java 9 (vs the platform loader)
       inst.appendToBootstrapClassLoaderSearch(bootStrapJar);
 
-      { // install agent
-        final Class<?> agentInstallerClass =
-            agentClassLoader.loadClass("datadog.trace.agent.tooling.AgentInstaller");
-        final Method agentInstallerMethod =
-            agentInstallerClass.getMethod("installBytebuddyAgent", Instrumentation.class);
-        agentInstallerMethod.invoke(null, inst);
-      }
-      { // install global tracer
-        final Class<?> tracerInstallerClass =
-            agentClassLoader.loadClass("datadog.trace.agent.tooling.TracerInstaller");
-        final Method tracerInstallerMethod = tracerInstallerClass.getMethod("installGlobalTracer");
-        tracerInstallerMethod.invoke(null);
-        // TODO
-        // - assert global tracer class is on bootstrap
-        // - assert global tracer impl class is on agent classloader
-        final Method logVersionInfoMethod = tracerInstallerClass.getMethod("logVersionInfo");
-        logVersionInfoMethod.invoke(null);
-      }
+      final ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+      try {
+        Thread.currentThread().setContextClassLoader(agentClassLoader);
 
-      AGENT_CLASSLOADER = agentClassLoader;
+        { // install agent
+          final Class<?> agentInstallerClass =
+            agentClassLoader.loadClass("datadog.trace.agent.tooling.AgentInstaller");
+          final Method agentInstallerMethod =
+            agentInstallerClass.getMethod("installBytebuddyAgent", Instrumentation.class);
+          agentInstallerMethod.invoke(null, inst);
+        }
+        { // install global tracer
+          final Class<?> tracerInstallerClass =
+            agentClassLoader.loadClass("datadog.trace.agent.tooling.TracerInstaller");
+          final Method tracerInstallerMethod = tracerInstallerClass.getMethod("installGlobalTracer");
+          tracerInstallerMethod.invoke(null);
+          // TODO
+          // - assert global tracer class is on bootstrap
+          // - assert global tracer impl class is on agent classloader
+          final Method logVersionInfoMethod = tracerInstallerClass.getMethod("logVersionInfo");
+          logVersionInfoMethod.invoke(null);
+        }
+
+        AGENT_CLASSLOADER = agentClassLoader;
+      } finally {
+        Thread.currentThread().setContextClassLoader(contextLoader);
+      }
     }
   }
 
