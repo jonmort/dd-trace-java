@@ -1,16 +1,18 @@
 package datadog.trace.agent;
 
 import com.google.common.collect.MapMaker;
+import datadog.trace.agent.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 // TODO: move to spock
 // TODO: merge with log rewrite test
 public class ShadowPackageRenamingTest {
+
   @Test
   public void agentDependenciesRenamed() throws Exception {
     final Class<?> ddClass =
-        ClassLoader.getSystemClassLoader().loadClass("datadog.trace.agent.tooling.AgentInstaller");
+        TestUtils.getAgentClassLoader().loadClass("datadog.trace.agent.tooling.AgentInstaller");
 
     final String userGuava =
         MapMaker.class.getProtectionDomain().getCodeSource().getLocation().getFile();
@@ -36,4 +38,6 @@ public class ShadowPackageRenamingTest {
   // TODO: Write test
   // for every class in bootstrap jar:
   //   assert class not present in agent jar
+
+  // TODO: Write test: assert agent classes not visible
 }

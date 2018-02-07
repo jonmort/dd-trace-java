@@ -1,5 +1,6 @@
 package datadog.trace.agent.test;
 
+import datadog.trace.agent.tooling.AgentInstaller;
 import datadog.trace.agent.tooling.Utils;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
@@ -9,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -100,5 +102,29 @@ public class TestUtils {
         inputStream.close();
       }
     }
+  }
+
+  /**
+   * Returns the classloader the core agent is running on.
+   */
+  public static ClassLoader getAgentClassLoader() {
+    Field classloaderField = null;
+    ClassLoader agentClassLoader = null;
+    try {
+      Class<?> tracingAgentClass = tracingAgentClass = ClassLoader.getSystemClassLoader().loadClass("datadog.trace.agent.TracingAgent");
+      classloaderField = tracingAgentClass.getDeclaredField("AGENT_CLASSLOADER");
+      classloaderField.setAccessible(true);
+      agentClassLoader = (ClassLoader) classloaderField.get(null);
+    } catch (Exception e) {
+    } finally {
+      if (null != classloaderField) {
+        classloaderField.setAccessible(false);
+      }
+    }
+    if (null == agentClassLoader) {
+      // we may be in a junit test with the agent installed on the system classloader
+      agentClassLoader = AgentInstaller.class.getClassLoader();
+    }
+    return agentClassLoader;
   }
 }

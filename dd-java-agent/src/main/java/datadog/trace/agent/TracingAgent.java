@@ -19,6 +19,7 @@ package datadog.trace.agent;
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.jar.JarFile;
 
 /** Entry point for initializing the agent. */
@@ -37,12 +38,11 @@ public class TracingAgent {
   private static synchronized void startAgent(final String agentArgs, final Instrumentation inst)
       throws Exception {
     if (null == AGENT_CLASSLOADER) {
-      final JarFile toolingJar =
-          new JarFile(
-              extractToTmpFile(
-                  TracingAgent.class.getClassLoader(),
-                  "agent-tooling-and-instrumentation.jar.zip",
-                  "agent-tooling-and-instrumentation.jar"));
+      final File toolingJar =
+          extractToTmpFile(
+              TracingAgent.class.getClassLoader(),
+              "agent-tooling-and-instrumentation.jar.zip",
+              "agent-tooling-and-instrumentation.jar");
       final JarFile bootStrapJar =
           new JarFile(
               extractToTmpFile(
@@ -50,10 +50,12 @@ public class TracingAgent {
                   "agent-bootstrap.jar.zip",
                   "agent-bootstrap.jar"));
 
-      final ClassLoader agentClassLoader = TracingAgent.class.getClassLoader();
+      // FIXME: parent under platform loader for java9?
+      final ClassLoader agentClassLoader =
+          new DatadogClassLoader(new URL[] {toolingJar.toURI().toURL()}, null);
 
-      inst.appendToSystemClassLoaderSearch(bootStrapJar);
-      inst.appendToSystemClassLoaderSearch(toolingJar);
+      // FIXME: ensure all classes are available on java 9 (vs the platform loader)
+      inst.appendToBootstrapClassLoaderSearch(bootStrapJar);
 
       { // install agent
         final Class<?> agentInstallerClass =
