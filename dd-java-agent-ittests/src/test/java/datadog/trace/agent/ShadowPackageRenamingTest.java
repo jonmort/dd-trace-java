@@ -1,7 +1,7 @@
 package datadog.trace.agent;
 
 import com.google.common.collect.MapMaker;
-import datadog.trace.agent.test.TestUtils;
+import datadog.trace.agent.test.IntegrationTestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,7 +12,8 @@ public class ShadowPackageRenamingTest {
   @Test
   public void agentDependenciesRenamed() throws Exception {
     final Class<?> ddClass =
-        TestUtils.getAgentClassLoader().loadClass("datadog.trace.agent.tooling.AgentInstaller");
+        IntegrationTestUtils.getAgentClassLoader()
+            .loadClass("datadog.trace.agent.tooling.AgentInstaller");
 
     final String userGuava =
         MapMaker.class.getProtectionDomain().getCodeSource().getLocation().getFile();

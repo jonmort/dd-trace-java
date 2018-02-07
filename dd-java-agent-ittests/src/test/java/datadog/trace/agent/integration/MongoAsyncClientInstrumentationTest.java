@@ -10,7 +10,7 @@ import com.mongodb.async.client.MongoClients;
 import com.mongodb.async.client.MongoDatabase;
 import datadog.opentracing.DDSpan;
 import datadog.opentracing.DDTracer;
-import datadog.trace.agent.test.TestUtils;
+import datadog.trace.agent.test.IntegrationTestUtils;
 import datadog.trace.common.writer.ListWriter;
 import io.opentracing.tag.Tags;
 import java.net.InetAddress;
@@ -29,7 +29,7 @@ public class MongoAsyncClientInstrumentationTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    TestUtils.registerOrReplaceGlobalTracer(tracer);
+    IntegrationTestUtils.registerOrReplaceGlobalTracer(tracer);
     MongoClientInstrumentationTest.startLocalMongo();
     client = MongoClients.create("mongodb://" + MONGO_HOST + ":" + MONGO_PORT);
   }
