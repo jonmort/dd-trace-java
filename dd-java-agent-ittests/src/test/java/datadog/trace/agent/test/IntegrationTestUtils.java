@@ -1,5 +1,6 @@
 package datadog.trace.agent.test;
 
+import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import java.io.File;
@@ -9,6 +10,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -18,6 +20,18 @@ import java.util.jar.Manifest;
  * classpath issues.
  */
 public class IntegrationTestUtils {
+
+  public static <T extends Object> Object runUnderTrace(
+      final String rootOperationName, final Callable<T> r) {
+    final Scope scope = GlobalTracer.get().buildSpan(rootOperationName).startActive(true);
+    try {
+      return r.call();
+    } catch (final Exception e) {
+      throw new IllegalStateException(e);
+    } finally {
+      scope.close();
+    }
+  }
 
   /** Returns the classloader the core agent is running on. */
   public static ClassLoader getAgentClassLoader() {

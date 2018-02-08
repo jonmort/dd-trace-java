@@ -63,15 +63,16 @@ public class TracingAgent {
 
         { // install agent
           final Class<?> agentInstallerClass =
-            agentClassLoader.loadClass("datadog.trace.agent.tooling.AgentInstaller");
+              agentClassLoader.loadClass("datadog.trace.agent.tooling.AgentInstaller");
           final Method agentInstallerMethod =
-            agentInstallerClass.getMethod("installBytebuddyAgent", Instrumentation.class);
+              agentInstallerClass.getMethod("installBytebuddyAgent", Instrumentation.class);
           agentInstallerMethod.invoke(null, inst);
         }
         { // install global tracer
           final Class<?> tracerInstallerClass =
-            agentClassLoader.loadClass("datadog.trace.agent.tooling.TracerInstaller");
-          final Method tracerInstallerMethod = tracerInstallerClass.getMethod("installGlobalTracer");
+              agentClassLoader.loadClass("datadog.trace.agent.tooling.TracerInstaller");
+          final Method tracerInstallerMethod =
+              tracerInstallerClass.getMethod("installGlobalTracer");
           tracerInstallerMethod.invoke(null);
           // TODO
           // - assert global tracer class is on bootstrap
