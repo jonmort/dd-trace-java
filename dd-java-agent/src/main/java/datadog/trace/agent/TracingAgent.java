@@ -25,6 +25,8 @@ import java.util.jar.JarFile;
 /** Entry point for initializing the agent. */
 public class TracingAgent {
   private static ClassLoader AGENT_CLASSLOADER = null;
+  // FIXME: cleaner way to do this
+  public static String BS_JAR;
 
   public static void premain(final String agentArgs, final Instrumentation inst) throws Exception {
     startAgent(agentArgs, inst);
@@ -43,19 +45,16 @@ public class TracingAgent {
               TracingAgent.class.getClassLoader(),
               "agent-tooling-and-instrumentation.jar.zip",
               "agent-tooling-and-instrumentation.jar");
-      final JarFile bootStrapJar =
-          new JarFile(
-              extractToTmpFile(
-                  TracingAgent.class.getClassLoader(),
-                  "agent-bootstrap.jar.zip",
-                  "agent-bootstrap.jar"));
+      final File bootstrapJar = extractToTmpFile( TracingAgent.class.getClassLoader(), "agent-bootstrap.jar.zip", "agent-bootstrap.jar");
+      BS_JAR = bootstrapJar.getAbsolutePath();
 
       // FIXME: parent under platform loader for java9?
+      // FIXME: Don't actually put bootstrapJar on the classpath. Resource path only.
       final ClassLoader agentClassLoader =
-          new DatadogClassLoader(new URL[] {toolingJar.toURI().toURL()}, null);
+          new DatadogClassLoader(new URL[] {toolingJar.toURI().toURL(), bootstrapJar.toURI().toURL()}, null);
 
       // FIXME: ensure all classes are available on java 9 (vs the platform loader)
-      inst.appendToBootstrapClassLoaderSearch(bootStrapJar);
+      inst.appendToBootstrapClassLoaderSearch(new JarFile(bootstrapJar));
 
       final ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
       try {
