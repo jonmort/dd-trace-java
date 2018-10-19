@@ -221,7 +221,7 @@ class RatpackTest extends AgentTestRunner {
     server.setHandler(new AbstractHandler() {
       @Override
       void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        response.setContentType("text/plain; charset=utf-8");
+        response.setContentType("text/plain; charset=utf-8")
         response.setStatus(HttpServletResponse.SC_OK)
         response.getWriter().print(request.pathInfo == "/nested" ? "succ" : "ess")
         baseRequest.setHandled(true)
@@ -331,7 +331,7 @@ class RatpackTest extends AgentTestRunner {
     server.setHandler(new AbstractHandler() {
       @Override
       void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        response.setContentType("text/plain; charset=utf-8");
+        response.setContentType("text/plain; charset=utf-8")
         response.setStatus(HttpServletResponse.SC_OK)
         response.getWriter().print(request.pathInfo == "/nested" ? "succ" : "ess")
         baseRequest.setHandled(true)

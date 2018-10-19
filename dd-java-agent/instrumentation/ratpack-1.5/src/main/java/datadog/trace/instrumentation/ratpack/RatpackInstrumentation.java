@@ -1,18 +1,17 @@
 package datadog.trace.instrumentation.ratpack;
 
-import com.google.auto.service.AutoService;
-import datadog.trace.agent.tooling.Instrumenter;
-import datadog.trace.instrumentation.ratpack.impl.RatpackServerAdvice;
-import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.matcher.ElementMatcher;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static datadog.trace.agent.tooling.ByteBuddyElementMatchers.safeHasSuperType;
 import static datadog.trace.agent.tooling.ClassLoaderMatcher.classLoaderHasClassWithMethod;
 import static net.bytebuddy.matcher.ElementMatchers.*;
+
+import com.google.auto.service.AutoService;
+import datadog.trace.agent.tooling.Instrumenter;
+import datadog.trace.instrumentation.ratpack.impl.RatpackServerAdvice;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.matcher.ElementMatcher;
 
 @AutoService(Instrumenter.class)
 @Slf4j
@@ -21,7 +20,7 @@ public final class RatpackInstrumentation extends Instrumenter.Default {
   private static final String EXEC_NAME = "ratpack";
 
   private static final ElementMatcher.Junction.AbstractBase<ClassLoader>
-    CLASSLOADER_CONTAINS_RATPACK_1_5_OR_ABOVE =
+      CLASSLOADER_CONTAINS_RATPACK_1_5_OR_ABOVE =
           classLoaderHasClassWithMethod("ratpack.server.ServerConfig", "getConnectQueueSize");
 
   public RatpackInstrumentation() {
