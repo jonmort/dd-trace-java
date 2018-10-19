@@ -49,7 +49,7 @@ testSets {
 }
 
 dependencies {
-  main_java8CompileOnly group: 'io.ratpack', name: 'ratpack-core', version: '1.4.0'
+  main_java8CompileOnly group: 'io.ratpack', name: 'ratpack-core', version: '1.5.4'
 
   main_java8Compile project(':dd-trace-ot')
   main_java8Compile project(':dd-java-agent:agent-tooling')
@@ -65,7 +65,10 @@ dependencies {
   compile sourceSets.main_java8.output
 
   testCompile project(':dd-java-agent:testing')
-  testCompile group: 'io.ratpack', name: 'ratpack-groovy-test', version: '1.4.0'
+  testCompile project(':dd-java-agent:instrumentation:netty-4.1')
+  testCompile project(':dd-java-agent:instrumentation:java-concurrent')
+  testCompile group: 'io.ratpack', name: 'ratpack-groovy-test', version: '1.5.4'
+  testCompile group: 'org.eclipse.jetty', name: 'jetty-server', version: '8.0.0.v20110901'
 }
 
 configurations.latestDepTestCompile {
