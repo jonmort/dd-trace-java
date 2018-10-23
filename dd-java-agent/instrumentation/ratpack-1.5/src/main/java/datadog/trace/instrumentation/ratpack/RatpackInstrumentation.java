@@ -49,6 +49,8 @@ public final class RatpackInstrumentation extends Instrumenter.Default {
       "datadog.trace.instrumentation.ratpack.impl.RatpackServerAdvice",
       "datadog.trace.instrumentation.ratpack.impl.RatpackServerAdvice$RatpackServerRegistryAdvice",
       "datadog.trace.instrumentation.ratpack.impl.RatpackTraceInterceptor",
+      "datadog.trace.instrumentation.ratpack.impl.RatpackTraceInterceptor$UsageTrackingContinuation",
+      "datadog.trace.instrumentation.ratpack.impl.TracingExecStarter",
       "datadog.trace.instrumentation.ratpack.impl.TracingHandler"
     };
   }

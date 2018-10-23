@@ -3,7 +3,6 @@ package datadog.trace.instrumentation.ratpack.impl;
 import datadog.trace.context.TraceScope;
 import io.netty.channel.EventLoop;
 import io.opentracing.Scope;
-//import io.opentracing.Span;
 import io.opentracing.Span;
 import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
@@ -15,70 +14,76 @@ import ratpack.registry.RegistrySpec;
 
 import java.util.Collections;
 
-import static ratpack.func.Action.noopIfNull;
-
+/**
+ * An ExecStarter that ensures that all forked executions have a span.
+ */
 public class TracingExecStarter implements ExecStarter {
 
   private final ExecStarter delegate;
   private final Span span;
   private Scope scope;
-  private Action<? super Throwable> onErrorAction;
-  private Action<? super Execution> onCompleteAction;
-  private Action<? super Execution> onStartAction;
-  private Action<? super RegistrySpec> onRegisterAction;
+  private Action<? super Throwable> onErrorAction = this::scopeErrorHandler;
+  private Action<? super Execution> onCompleteAction = this::closeScope;
+  private Action<? super Execution> onStartAction = this::startSpan;
   private TraceScope.Continuation continuation;
   private TraceScope traceScope;
 
+  @SuppressWarnings("WeakerAccess")
   public TracingExecStarter(ExecStarter delegate) {
-    System.out.println("TracingExecStarter Constructor");
     this.delegate = delegate;
-    Span parent = GlobalTracer.get().activeSpan();
+    Span parentSpan = Execution.current()
+      .maybeGet(Scope.class)
+      .map(Scope::span)
+      .orElse(null);
+
     this.span = GlobalTracer.get()
       .buildSpan("ratpack.execution")
-      .asChildOf(parent)
+      .asChildOf(parentSpan)
       .withTag(Tags.COMPONENT.getKey(), "execution")
       .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
+      .ignoreActiveSpan()
       .start();
   }
 
   @Override
   public void start(Action<? super Execution> initialExecutionSegment) {
-
+    // this will be run on the thread/execution that is doing the forking. We create the span here so that it will
+    // be associated with the parent scope
+    scope = GlobalTracer.get().scopeManager().activate(span, true);
     if (scope instanceof TraceScope) {
-      TraceScope traceScope = (TraceScope) scope;
+      traceScope = (TraceScope) scope;
       traceScope.setAsyncPropagation(true);
       continuation = traceScope.capture();
     }
-//    // this needs to pass on all our things and the called ones too
-    delegate.onError(noopIfNull(onErrorAction).prepend(this::scopeErrorHandler));
-    delegate.onComplete(noopIfNull(onCompleteAction).prepend(this::closeScope));
-    delegate.onStart(noopIfNull(onStartAction).prepend(this::startSpan));
-    delegate.register(noopIfNull(onRegisterAction).prepend(this::addToRegistry));
+    // this needs to pass on all our things and the called ones too
+    delegate.onError(onErrorAction);
+    delegate.onComplete(onCompleteAction);
+    delegate.onStart(onStartAction);
     delegate.start(initialExecutionSegment);
   }
 
 
   @Override
   public ExecStarter onError(Action<? super Throwable> onError) {
-    onErrorAction = onError;
+    onErrorAction = onError.prepend(this::scopeErrorHandler);
     return this;
   }
 
   @Override
   public ExecStarter onComplete(Action<? super Execution> onComplete) {
-    onCompleteAction = onComplete;
+    onCompleteAction = onComplete.prepend(this::closeScope);
     return this;
   }
 
   @Override
   public ExecStarter onStart(Action<? super Execution> onStart) {
-    onStartAction = onStart;
+    onStartAction = onStart.prepend(this::startSpan);
     return this;
   }
 
   @Override
   public ExecStarter register(Action<? super RegistrySpec> action) {
-    onRegisterAction = action;
+    delegate.register(action);
     return this;
   }
 
@@ -89,10 +94,9 @@ public class TracingExecStarter implements ExecStarter {
   }
 
   private void startSpan(Execution execution) {
-    scope = GlobalTracer.get().scopeManager().activate(span, false);
-    execution.add(Scope.class, scope)
-      .add(TraceScope.Continuation.class, continuation);
-    traceScope = execution.maybeGet(TraceScope.Continuation.class).map(TraceScope.Continuation::activate).orElse(null);
+    traceScope = continuation.activate();
+    execution.add(Scope.class, scope);
+    execution.add(TraceScope.Continuation.class, continuation);
   }
 
   private void scopeErrorHandler(Throwable t) {
@@ -104,11 +108,5 @@ public class TracingExecStarter implements ExecStarter {
     if(traceScope != null) {
       traceScope.close();
     }
-    scope.span().finish();
-    scope.close();
-  }
-
-  private void addToRegistry(RegistrySpec rs) {
-
   }
 }

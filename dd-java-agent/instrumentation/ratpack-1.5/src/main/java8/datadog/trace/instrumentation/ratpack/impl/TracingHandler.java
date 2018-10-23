@@ -17,6 +17,9 @@ import ratpack.http.Status;
 import ratpack.registry.Registry;
 import ratpack.registry.RegistryBuilder;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 /**
  * This Ratpack handler reads tracing headers from the incoming request, starts a scope and ensures
  * that the scope is closed when the response is sent
@@ -25,7 +28,6 @@ public final class TracingHandler implements Handler {
   @Override
   public void handle(final Context ctx) {
     final Request request = ctx.getRequest();
-    System.out.println("HERE IN TEH HANDLER " + request.getUri());
 
     final Span parent = GlobalTracer.get().activeSpan();
     final Scope scope =
@@ -52,6 +54,9 @@ public final class TracingHandler implements Handler {
     ctx.getResponse()
       .beforeSend(
         response -> {
+          // any continuations left in the execution registry at this point should be closed.
+          Execution.current().maybeGet(TraceScope.Continuation.class)
+            .ifPresent(TraceScope.Continuation::close);
           Span span = scope.span();
           span.setTag(DDTags.RESOURCE_NAME, getResourceName(ctx));
           final Status status = response.getStatus();
@@ -61,12 +66,6 @@ public final class TracingHandler implements Handler {
             }
             Tags.HTTP_STATUS.set(span, status.getCode());
           }
-          if (scope instanceof TraceScope) {
-            ((TraceScope) scope).setAsyncPropagation(false);
-          }
-          Execution.current()
-            .maybeGet(TraceScope.Continuation.class)
-            .ifPresent(TraceScope.Continuation::close);
           scope.close();
         });
 

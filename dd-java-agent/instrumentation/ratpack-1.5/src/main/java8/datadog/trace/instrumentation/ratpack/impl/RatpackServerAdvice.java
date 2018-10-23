@@ -11,10 +11,16 @@ import ratpack.registry.Registry;
 
 @Slf4j
 public class RatpackServerAdvice {
+  /**
+   * Add the Execution trace interceptor and the request tracing handler to the base ratpack registry as a user
+   * injected registry
+   */
   public static class RatpackServerRegistryAdvice {
     @Advice.OnMethodEnter
     public static void injectTracing(
-      @Advice.Argument(value = 4, readOnly = false) Function<? super Registry, ? extends Registry> userRegistryFactory) {
+      @Advice.Argument(value = 4, readOnly = false)
+        Function<? super Registry, ? extends Registry> userRegistryFactory) {
+      // add a handler decorator to ensure that the correct continuation is used everywhere....
       Registry traceRegistry = Registry.builder()
         .add(ExecInterceptor.class, new RatpackTraceInterceptor())
         .add(HandlerDecorator.prepend(new TracingHandler()))
@@ -26,13 +32,16 @@ public class RatpackServerAdvice {
       } catch (Exception e) {
         log.error("Failed to add instrumentation to ratpack registry", e);
       }
-
     }
   }
 
+  /**
+   * Wrap any ExecStarters with a TracingExecStarter to instrument all Ratapck Executions
+   */
   public static class ExecutionAdvice {
     @Advice.OnMethodExit
-    public static void addTracingExecStarter(@Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) ExecStarter starter) {
+    public static void addTracingExecStarter(
+      @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) ExecStarter starter) {
       //noinspection UnusedAssignment
       starter = new TracingExecStarter(starter);
     }
